@@ -11,7 +11,7 @@ class RedirectReLUs(torchbearer.Callback):
 
         >>> import torchbearer
         >>> from torchbearer import Trial
-        >>> from visual.models.redirect_relu import RedirectReLUs
+        >>> from visual import RedirectReLUs
         >>> model = torch.nn.Sequential(torch.nn.ReLU())
         >>> @torchbearer.callbacks.on_sample
         ... def input_data(state):

@@ -15,6 +15,7 @@ from .loss import *
 from .images import *
 from . import transforms
 from .ascent import *
+from .redirect_relu import *
 
 
 def check_vision():
