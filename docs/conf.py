@@ -35,6 +35,10 @@ version = version_dict['__version__']
 # The full version, including alpha/beta/rc tags.
 release = version_dict['__version__']
 
+
+# The master toctree document.
+master_doc = 'index'
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
