@@ -11,6 +11,9 @@ Deep Inside Convolutional Networks
         :members:
         :undoc-members:
 """
+
+from .version import __version__
+
 from .loss import *
 from .images import *
 from . import transforms
