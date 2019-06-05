@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 import torchbearer
-from torchbearer.imaging import ImagingCallback
+from torchbearer.callbacks.imaging import ImagingCallback
 
 
 class _Wrapper(nn.Module):

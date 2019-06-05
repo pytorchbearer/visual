@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from visual.models.utils import storer, basemodel
 
 
-layer_names = ['conv1BnRelu1', *['invertedresidual{}'.format(i) for i in range(18)], 'avgpool18', 'dropout18', 'fc18']
+layer_names = ['conv1BnRelu1'] + ['invertedresidual{}'.format(i) for i in range(18)] + ['avgpool18', 'dropout18', 'fc18']
 
 
 class MobileNetV2(MobileNet):

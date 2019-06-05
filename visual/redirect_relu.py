@@ -30,12 +30,12 @@ class RedirectReLUs(torchbearer.Callback):
 
     """
     def __init__(self):
-        super().__init__()
+        super(RedirectReLUs, self).__init__()
         self.relu_types = [torch.nn.ReLU]
         self.old_modules = {}
 
     def on_start(self, state):
-        super().on_start(state)
+        super(RedirectReLUs, self).on_start(state)
         for i, m in enumerate(state[torchbearer.MODEL].children()):
             if type(m) == torch.nn.ReLU:
                 self.old_modules[i] = m
