@@ -23,6 +23,17 @@ project = 'visual'
 copyright = '2019, Ethan Harris, Matthew Painter'
 author = 'Ethan Harris, Matthew Painter'
 
+# The version info for the project you're documenting, acts as replacement for
+# |version| and |release|, also used in various other places throughout the
+# built documents.
+
+version_dict = {}
+exec(open("../torchbearer/version.py").read(), version_dict)
+
+# The short X.Y version.
+version = version_dict['__version__']
+# The full version, including alpha/beta/rc tags.
+release = version_dict['__version__']
 
 # -- General configuration ---------------------------------------------------
 
