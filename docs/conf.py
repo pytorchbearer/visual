@@ -28,7 +28,7 @@ author = 'Ethan Harris, Matthew Painter'
 # built documents.
 
 version_dict = {}
-exec(open("../torchbearer/version.py").read(), version_dict)
+exec(open("../visual/version.py").read(), version_dict)
 
 # The short X.Y version.
 version = version_dict['__version__']
