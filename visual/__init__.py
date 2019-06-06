@@ -8,14 +8,14 @@ Ascent
 Images
 ------------------------------------
 ..  automodule:: visual.images
+        :noindex: IMAGE
         :members:
-        :undoc-members:
 
 Loss
 ------------------------------------
 ..  automodule:: visual.loss
+        :noindex: LAYER_DICT
         :members:
-        :undoc-members:
 
 transforms
 ------------------------------------
@@ -27,7 +27,17 @@ Redirect ReLU
 ------------------------------------
 ..  automodule:: visual.redirect_relu
         :members:
+
+StateKeys
+------------------------------------
+..  automodule:: visual.loss
+        :members: LAYER_DICT
         :undoc-members:
+
+..  automodule:: visual.images
+        :members: IMAGE
+        :undoc-members:
+
 """
 
 from .version import __version__

@@ -7,7 +7,7 @@ import torchbearer
 
 
 IMAGE = torchbearer.state_key('image')
-""" State key to hold the image being ascended on """
+""" State key under which to hold the image being ascended on """
 
 
 def _correlate_color(image, correlation, max_norm):
