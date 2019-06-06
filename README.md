@@ -14,7 +14,7 @@ A visualisations library for PyTorch with torchbearer
 
 ## About
 
-Torchbearer.variational is a companion package to [torchbearer](https://github.com/ecs-vlc/torchbearer) which is 
+Torchbearer.visual is a companion package to [torchbearer](https://github.com/ecs-vlc/torchbearer) which is 
 intended to re-implement state of the art practices in filter and feature visualisation.
 
 <a name="installation"/>
