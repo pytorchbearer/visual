@@ -12,7 +12,7 @@ class Storer(torch.nn.Module):
         self.name = name
 
     def forward(self, x):
-        self.save_state[self.name] = x
+        x = storer(self.save_state, self.name, x)
         return x
 
 
