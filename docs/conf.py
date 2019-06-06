@@ -20,8 +20,8 @@ autodoc_mock_imports = ['torch', 'torchbearer', 'torch.nn.utils.clip_grad_norm',
 # -- Project information -----------------------------------------------------
 
 project = 'visual'
-copyright = '2019, Ethan Harris, Matthew Painter'
-author = 'Ethan Harris, Matthew Painter'
+copyright = 'Torchbearer Contributors'
+author = 'Torchbearer Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
