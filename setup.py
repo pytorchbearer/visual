@@ -13,7 +13,7 @@ else:
     long_description = 'A visualisation library for PyTorch using torchbearer'
 
 setup(
-    name='visual',
+    name='torchbearer_visual',
     version=version_dict['__version__'],
     packages=['visual', 'visual.models', 'tests', 'tests.models'],
     url='https://github.com/pytorchbearer/visual',
