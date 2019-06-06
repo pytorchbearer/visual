@@ -21,4 +21,10 @@ intended to re-implement state of the art practices in filter and feature visual
 
 ## Installation
 
-TBC
+The easiest way to install visual is with pip:
+
+`pip install torchbearer-visual`
+
+Alternatively, build from source with:
+
+`pip install git+https://github.com/pytorchbearer/visual`
