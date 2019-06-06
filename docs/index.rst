@@ -12,6 +12,7 @@ Welcome to visual's documentation!
    :caption: Package Reference
 
    code/main
+   code/models
 
 .. toctree::
    :maxdepth: 2

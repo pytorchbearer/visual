@@ -7,9 +7,15 @@ from visual.models.utils import storer, basemodel
 layer_names = ['conv1', 'relu1', 'maxpool2', 'conv2', 'relu2', 'maxpool3', 'conv3a', 'relu3a', 'conv3b', 'relu3b',
                'conv3c', 'relu3c', 'maxpool4', 'avgpool4', 'dropout5a', 'fc5a', 'relu5a', 'dropout5b', 'fc5b', 'relu5b',
                'fc5c']
+""" Layer names that can be accessed for the AlexNet model. 
+"""
 
 
 class AlexNet(ANet):
+    """ Wrapper to
+    `torchvision.models.AlexNet <https://pytorch.org/docs/0.4.0/_modules/torchvision/models/alexnet.html#alexnet>`__
+    which stores each layers output in state under :data:`visual.loss.LAYER_DICT`
+    """
     def forward(self, x, state):
         for i, m in enumerate(self.features):
             x = m(x)
@@ -29,6 +35,7 @@ class AlexNet(ANet):
 def alexnet(pretrained=False, progress=True, **kwargs):
     r"""AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr

@@ -7,9 +7,15 @@ from visual.models.utils import storer, basemodel
 
 layer_names = ['conv0', 'norm0', 'relu0', 'pool1', 'denseblock1', 'transition1', 'denseblock2', 'transition2',
                'denseblock3', 'transition3', 'denseblock4', 'norm5', 'relu5', 'avgpool6', 'fc6']
+""" Layer names that can be accessed for the DenseNet models. 
+"""
 
 
 class DenseNet(DNet):
+    """ Wrapper to
+    `torchvision.models.DenseNet <https://pytorch.org/docs/0.4.0/_modules/torchvision/models/densenet.html#DenseNet>`__
+    which stores each layers output in state under :data:`visual.loss.LAYER_DICT`
+    """
     def forward(self, x, state):
         for i, m in enumerate(self.features):
             x = m(x)
@@ -25,8 +31,7 @@ class DenseNet(DNet):
         return out
 
 
-def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress,
-              **kwargs):
+def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress, **kwargs):
     model = basemodel(DenseNet)(layer_names, growth_rate, block_config, num_init_features, **kwargs)
     if pretrained:
         _load_state_dict(model, model_urls[arch], progress)
@@ -36,6 +41,7 @@ def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, pr
 def densenet121(pretrained=False, progress=True, **kwargs):
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
@@ -47,6 +53,7 @@ def densenet121(pretrained=False, progress=True, **kwargs):
 def densenet161(pretrained=False, progress=True, **kwargs):
     r"""Densenet-161 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
@@ -55,9 +62,10 @@ def densenet161(pretrained=False, progress=True, **kwargs):
                      **kwargs)
 
 
-def densenet169(pretrained=False, progress=True, **kwargs):
+def densenet161(pretrained=False, progress=True, **kwargs):
     r"""Densenet-169 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
@@ -69,6 +77,7 @@ def densenet169(pretrained=False, progress=True, **kwargs):
 def densenet201(pretrained=False, progress=True, **kwargs):
     r"""Densenet-201 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
