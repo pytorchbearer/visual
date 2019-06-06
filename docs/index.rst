@@ -9,6 +9,13 @@ Welcome to visual's documentation!
 .. toctree::
    :glob:
    :maxdepth: 1
+   :caption: Example Notebooks
+
+   examples/notebooks
+
+.. toctree::
+   :glob:
+   :maxdepth: 1
    :caption: Package Reference
 
    code/main
