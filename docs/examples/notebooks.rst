@@ -2,7 +2,7 @@ Notebooks List
 ================================
 Here we have a list of example notebooks using `visual`.
 
-Deep Learning
+Visualisation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. |colab| image:: /_static/img/colab.jpg
     :width: 25
