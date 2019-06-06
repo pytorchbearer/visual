@@ -5,6 +5,9 @@ from visual.images import IMAGE
 import torchbearer
 
 LAYER_DICT = torchbearer.state_key('layer_dict')
+""" StateKey under which to store a dictionary of layer outputs for a model. Keys in this dictionary can be accessed as 
+strings in the `target` arguments of vision classes. 
+"""
 
 
 def _evaluate_target(state, target, channels=lambda x: x[:]):
@@ -140,7 +143,7 @@ class L2(Criterion):
 
     Args:
         constant (float / int / torch.Tensor): Bias on the target:
-        eps: Epsilon constant to be added before square root. Defult: 1e-6
+        eps (float): Epsilon constant to be added before square root. Defult: 1e-6
         target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target. Default: input image
         channels (func): Function which returns the channels from target on which to apply the criterion. Default: All channels
     """
