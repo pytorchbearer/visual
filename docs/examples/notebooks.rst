@@ -1,6 +1,6 @@
 Notebooks List
 ================================
-Here we have a list of example notebooks using Torchbearer with a brief description of the contents and broken down by broad subject.
+Here we have a list of example notebooks using `visual`.
 
 Deep Learning
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
