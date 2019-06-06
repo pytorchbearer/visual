@@ -52,11 +52,17 @@ class RedirectReLUs(torchbearer.Callback):
 
 
 class RedirectedReLU(torch.nn.Module):
+    """ Module to wrap the redirected ReLU function.
+    See `here <https://github.com/tensorflow/lucid/blob/master/lucid/misc/redirected_relu_grad.py>`__
+    """
     def forward(self, x):
         return RedirectedReLUFunction.apply(x)
 
 
 class RedirectedReLU6(torch.nn.Module):
+    """ Module to wrap the redirected ReLU6 function.
+    See `here <https://github.com/tensorflow/lucid/blob/master/lucid/misc/redirected_relu_grad.py>`__
+    """
     def forward(self, x):
         return RedirectedReLU6Function.apply(x)
 
@@ -64,7 +70,6 @@ class RedirectedReLU6(torch.nn.Module):
 class RedirectedReLUFunction(torch.autograd.Function):
     """Reimplementation of the redirected ReLU from
     `tensorflows lucid library <https://github.com/tensorflow/lucid/blob/master/lucid/misc/redirected_relu_grad.py>`__.
-
     """
     @staticmethod
     def forward(ctx, input):
@@ -98,7 +103,6 @@ class RedirectedReLUFunction(torch.autograd.Function):
 class RedirectedReLU6Function(torch.autograd.Function):
     """Reimplementation of the redirected ReLU6 from
     `tensorflows lucid library <https://github.com/tensorflow/lucid/blob/master/lucid/misc/redirected_relu_grad.py>`__.
-
     """
     @staticmethod
     def forward(ctx, input):

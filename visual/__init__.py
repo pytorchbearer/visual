@@ -1,13 +1,31 @@
 """
-Main Classes
+Ascent
 ------------------------------------
-..  automodule:: torchbearer.callbacks.imaging.imaging
+..  automodule:: visual.ascent
         :members:
         :undoc-members:
 
-Deep Inside Convolutional Networks
+Images
 ------------------------------------
-.. automodule:: torchbearer.callbacks.imaging.inside_cnns
+..  automodule:: visual.images
+        :members:
+        :undoc-members:
+
+Loss
+------------------------------------
+..  automodule:: visual.loss
+        :members:
+        :undoc-members:
+
+transforms
+------------------------------------
+..  automodule:: visual.transforms
+        :members:
+        :undoc-members:
+
+Redirect ReLU
+------------------------------------
+..  automodule:: visual.redirect_relu
         :members:
         :undoc-members:
 """

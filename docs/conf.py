@@ -10,9 +10,11 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
+sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../'))
+
 
 autodoc_mock_imports = ['torch', 'torchbearer', 'torch.nn.utils.clip_grad_norm', 'torchvision', 'torchvision.utils', 'torchvision.datasets', 'torchvision.datasets.folder', 'torch.nn', 'torch.nn.functional', 'torch.nn.modules', 'torch.optim', 'torch.distributions.utils', 'torch.distributions', 'torch.utils', 'torch.utils.data', 'numpy', 'sklearn', 'sklearn.metrics', 'tqdm', 'tensorboardX', 'tensorboardX.torchvis', 'livelossplot', 'IPython']
 

@@ -7,6 +7,13 @@ Welcome to visual's documentation!
 ==================================
 
 .. toctree::
+   :glob:
+   :maxdepth: 1
+   :caption: Package Reference
+
+   code/main
+
+.. toctree::
    :maxdepth: 2
    :caption: Contents:
 

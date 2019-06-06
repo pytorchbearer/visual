@@ -8,6 +8,11 @@ from .images import FFTImage
 
 
 class Compose(object):
+    """ Composes a number of Image transforms, similar to torchvision.transforms.Compose for torchvision transforms
+
+    Args:
+        transforms (list / tuple): Transforms to compose
+    """
     def __init__(self, transforms):
         super(Compose, self).__init__()
 
@@ -42,6 +47,14 @@ def _as_3d(x):
 
 
 class RandomScale(object):
+    """ Transform that randomly scales the input from a set list of scales
+
+    Args:
+        scales (list / tuple): Set of scales that can be chosen
+        mode (str): Interpolation mode. See `torch.nn.functional.interpolate <https://pytorch.org/docs/stable/nn.html?highlight=interpolate#torch.nn.functional.interpolate>`_
+        align_corners (bool, optional): See `torch.nn.functional.interpolate`_
+        seed: Random seed
+    """
     def __init__(self, scales, mode='bilinear', align_corners=None, seed=None):
         self._scales = scales
         self._mode = mode
@@ -62,6 +75,15 @@ class RandomScale(object):
 
 
 class RandomRotate(object):
+    """ Image transform that randomly rotates the input from a set of possible angles
+
+    Args:
+        angles: Set and possible angles
+        units: Rotation units. If 'degrees' ,'degs', 'deg' the use degrees, Else use radians
+        mode: Interpolation mode. See `torch.nn.functional.grid_sample <https://pytorch.org/docs/stable/nn.html?highlight=grid%20sample#torch.nn.functional.grid_sample>`_
+        padding_mode: Padding mode. See `torch.nn.functional.grid_sample`_
+        seed: Random seed
+    """
     def __init__(self, angles, units='degrees', mode='bilinear', padding_mode='zeros', seed=None):
         if units.lower() in ['degrees', 'degs', 'deg']:
             for i in range(len(angles)):
@@ -95,6 +117,13 @@ class RandomRotate(object):
 
 
 class RandomAlpha(object):
+    """ Image transform that creates a random alpha mask
+
+    Args:
+        sd:
+        decay_power:
+        colour: If True: Create a mask for each colour channel. Else create a single alpha channel
+    """
     def __init__(self, sd=0.5, decay_power=1, colour=True):
         self._sd = sd
         self._decay_power = decay_power

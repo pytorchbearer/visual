@@ -21,10 +21,18 @@ class _Wrapper(nn.Module):
 
 
 class BasicAscent(ImagingCallback):
-    def __init__(self, image, criterion, transform=None, verbose=0,
-                 optimizer=None, steps=256):
-        super(BasicAscent, self).__init__(transform=transform)
+    """Callback or stand-alone class to perform gradient ascent on an input image.
 
+    Args:
+        image (visual.Image): Input image
+        criterion (visual.Criterion): Loss criterion for the gradient ascent
+        transform: Transform or transforms to apply to image
+        verbose (int): If 2: use tqdm on batch, If 1: use tqdm on epoch, If 0: display no training
+        optimizer (torch.optim.Optimizer): The optimizer used for image parameter updates. If None: Use Adam
+        steps (int): Number of gradient ascent steps to run
+    """
+    def __init__(self, image, criterion, transform=None, verbose=0, optimizer=None, steps=256):
+        super(BasicAscent, self).__init__(transform=transform)
         self.image = image
         self.criterion = criterion
         self.verbose = verbose
@@ -54,6 +62,14 @@ class BasicAscent(ImagingCallback):
         return model.image.get_valid_image()
 
     def run(self, model, verbose=2, device='cpu', dtype=torch.float32):
+        """Performs the gradient ascent
+
+        Args:
+            model (torch.nn.Module): Base PyTorch model
+            verbose (int): If 2: use tqdm on batch, If 1: use tqdm on epoch, If 0: display no training
+            device (str): Device to perform ascent on, e.g. 'cuda' or 'cpu'
+            dtype (torch.dtype): Data type of tensors
+        """
         old_verbose = self.verbose
         self.verbose = verbose
 

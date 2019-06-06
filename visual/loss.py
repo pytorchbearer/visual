@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 
-from .images import IMAGE
+from visual.images import IMAGE
 import torchbearer
 
 LAYER_DICT = torchbearer.state_key('layer_dict')
@@ -15,7 +15,15 @@ def _evaluate_target(state, target, channels=lambda x: x[:]):
 
 
 class Criterion(object):
+    """
+    Abstract criterion object for visual gradient ascent.
+    """
     def process(self, state):
+        """ Calculates the criterion value
+
+        Args:
+            state: Torchbearer state
+        """
         raise NotImplementedError
 
     def __call__(self, state):
@@ -47,6 +55,11 @@ class Criterion(object):
 
 
 class LambdaCriterion(Criterion):
+    """ Criterion that wraps a function of state
+
+    Args:
+        function (func): Function of state to be wrapped
+    """
     def __init__(self, function):
         self._function = function
 
@@ -58,6 +71,12 @@ criterion = LambdaCriterion
 
 
 class Channel(Criterion):
+    """ Channel criterion returns the mean of a specified feature map in a model
+
+    Args:
+        channel (int): Channel number to maximise
+        target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target
+    """
     def __init__(self, channel, target):
         super(Channel, self).__init__()
         self._channel = channel
@@ -68,6 +87,11 @@ class Channel(Criterion):
 
 
 class TotalVariation(Criterion):
+    """ Total variation of features from the target layer
+
+    Args:
+        target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target
+    """
     def __init__(self, target=IMAGE):
         super(TotalVariation, self).__init__()
         self._target = target
@@ -80,6 +104,11 @@ class TotalVariation(Criterion):
 
 
 class DeepDream(Criterion):
+    """ `Deep Dream <https://github.com/google/deepdream>`__ criterion
+
+    Args:
+        target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target
+    """
     def __init__(self, target):
         super(DeepDream, self).__init__()
         self._target = target
@@ -89,6 +118,13 @@ class DeepDream(Criterion):
 
 
 class L1(Criterion):
+    """ Simple L1 criterion on target (often the input image)
+
+    Args:
+        constant (float / int / torch.Tensor): Bias on the target
+        target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target. Default: input image
+        channels (func): Function which returns the channels from target on which to apply the criterion. Default: All channels
+    """
     def __init__(self, constant=0, target=IMAGE, channels=lambda x: x[:]):
         super(L1, self).__init__()
         self._constant = constant
@@ -100,6 +136,14 @@ class L1(Criterion):
 
 
 class L2(Criterion):
+    """ Simple L2 criterion on target (often the input image)
+
+    Args:
+        constant (float / int / torch.Tensor): Bias on the target:
+        eps: Epsilon constant to be added before square root. Defult: 1e-6
+        target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target. Default: input image
+        channels (func): Function which returns the channels from target on which to apply the criterion. Default: All channels
+    """
     def __init__(self, constant=0, eps=1e-6, target=IMAGE, channels=lambda x: x[:]):
         super(L2, self).__init__()
         self._constant = constant
@@ -112,6 +156,12 @@ class L2(Criterion):
 
 
 class Blur(Criterion):
+    """ Blurring criterion that differentiably blurs the target (often the input image)
+
+    Args:
+        target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target. Default: input image
+        channels (func): Function which returns the channels from target on which to apply the criterion. Default: All channels
+    """
     def __init__(self, target=IMAGE, channels=lambda x: x[:]):
         self._target = target
         self._channels = channels
@@ -138,5 +188,10 @@ class Blur(Criterion):
 
 
 class BlurAlpha(Blur):
+    """ Blurring criterion specifically for the alpha channel in the target
+
+    Args:
+        target (torchbearer.StateKey / str): Layer string or StateKey from which to retrieve the target. Default: input image
+    """
     def __init__(self, target=IMAGE):
         super(BlurAlpha, self).__init__(target=target, channels=lambda x: x[-1].unsqueeze(0))

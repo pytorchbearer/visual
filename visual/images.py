@@ -7,6 +7,7 @@ import torchbearer
 
 
 IMAGE = torchbearer.state_key('image')
+""" State key to hold the image being ascended on """
 
 
 def _correlate_color(image, correlation, max_norm):
@@ -26,6 +27,21 @@ def _correlate_color(image, correlation, max_norm):
 
 
 def image(shape, transform=None, correlate=True, fft=True, sigmoid=True, sd=0.01, decay_power=1, requires_grad=True):
+    """ Helper function to generate an image with the given parameters
+
+    Args:
+        shape (tuple[int]): Shape of the final image.
+        transform: Transforms to apply to the image
+        correlate (bool): If True, correlate colour channels of the image when loaded.
+        fft (bool): If True, image created in fourier domain
+        sigmoid (bool): If True, sigmoid the image
+        sd (float): Standard deviation of random initialisation of the image
+        decay_power (int / float): Rate of decay on the normalising constant in FFT image
+        requires_grad (bool): If True, Image tensor requires gradient.
+
+    Returns:
+
+    """
     if not fft:
         img = torch.randn(shape) if sigmoid else torch.rand(shape)
         img = TensorImage(img, transform=transform, correlate=correlate, requires_grad=requires_grad)
@@ -36,6 +52,12 @@ def image(shape, transform=None, correlate=True, fft=True, sigmoid=True, sd=0.01
 
 
 class Image(nn.Module):
+    """ Base image class which wraps an image tensor with transforms and allow de/correlating colour channels
+
+    Args:
+        transform: Transforms to apply to the image
+        correlate (bool): If True, correlate colour channels of the image when loaded.
+    """
     def __init__(self, transform=None, correlate=True):
         super(Image, self).__init__()
 
@@ -57,10 +79,10 @@ class Image(nn.Module):
     @property
     def image(self):
         """
-        Return an un-normalised, parameterised image.
+        Class property that returns an un-normalised, parameterised image.
 
         Returns:
-            `torch.Tensor': Image (channels, height, width)
+            `torch.Tensor`: Image (channels, height, width) in real space
         """
         raise NotImplementedError
 
@@ -69,7 +91,7 @@ class Image(nn.Module):
         Return a valid (0, 1) representation of this image, following activation function and colour correction.
 
         Returns:
-            `torch.Tensor': Image (channels, height, width) with all values in range (0, 1)
+            `torch.Tensor`: Image (channels, height, width) in real space
         """
         return self.activation(self.correction(self.image))
 
@@ -105,6 +127,14 @@ class Image(nn.Module):
 
 
 class TensorImage(Image):
+    """ Wrapper for Image which takes a torch.Tensor.
+
+    Args:
+        tensor (`torch.Tensor`): Image tensor
+        transform: Transforms to apply to the image
+        correlate (bool): If True, correlate colour channels of the image when loaded.
+        requires_grad (bool): If True, tensor requires gradient.
+    """
     def __init__(self, tensor, transform=None, correlate=True, requires_grad=True):
         super(TensorImage, self).__init__(transform=transform, correlate=correlate)
 
@@ -112,6 +142,11 @@ class TensorImage(Image):
 
     @property
     def image(self):
+        """ Class property that returns the image tensor
+
+        Returns:
+            `torch.Tensor`: Image (channels, height, width) in real space
+        """
         return self.tensor
 
 
@@ -126,6 +161,16 @@ def fftfreq2d(w, h):
 
 
 class FFTImage(Image):
+    """ Wrapper for Image with creates a random image in the fourer domain with the given parameters
+
+    Args:
+        shape (tuple[int]): Shape of the final image.
+        sd (float): Standard deviation of random initialisation of the image
+        decay_power (int / float): Rate of decay on the normalising constant in FFT image
+        transform: Transforms to apply to the image
+        correlate (bool): If True, correlate colour channels of the image when loaded.
+        requires_grad (bool): If True, Image tensor requires gradient.
+    """
     def __init__(self, shape, sd=0.01, decay_power=1, transform=None, correlate=True, requires_grad=True):
         super(FFTImage, self).__init__(transform=transform, correlate=correlate)
 
@@ -142,6 +187,11 @@ class FFTImage(Image):
 
     @property
     def image(self):
+        """ Class property that returns the image in the real domain
+
+        Returns:
+            `torch.Tensor`: Image (channels, height, width) in real space
+        """
         ch, h, w = self._shape
         spectrum = self.scale.unsqueeze(0).unsqueeze(3) * self.param
         image = torch.irfft(spectrum, 2)
