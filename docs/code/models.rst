@@ -2,6 +2,7 @@ Models
 ====================================
 
 All the following models have been reimplemented to store layer outputs in :data:`visual.loss.LAYER_DICT`.
+\* Pre-trained weights not available through torchvision.
 
 .. list-table::
    :widths: 10 25
@@ -29,7 +30,7 @@ All the following models have been reimplemented to store layer outputs in :data
      - resnet18, resnet34, resnet50, resnet101, resnet152, resnext101_32x8d, resnext50_32x4d
 
    * - ShuffleNet
-     - shufflenet_v2_x0_5, shufflenet_v2_x1_0, shufflenet_v2_x1_5, shufflenet_v2_x2_0
+     - shufflenet_v2_x0_5, shufflenet_v2_x1_0, \*shufflenet_v2_x1_5, \*shufflenet_v2_x2_0
 
    * - SqueezeNet
      - squeezenet1_0, squeezenet1_1
