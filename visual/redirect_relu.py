@@ -4,6 +4,14 @@ from torch import nn
 
 
 class TemporaryRelu(nn.Module):
+    """ Module to wrap ReLU and RedirectedReLU and call the correct on for the current stage of training.
+        For the first epoch only the first 16 batches use redirection and all others use standard relu.
+
+        Args:
+            old_module: Standard ReLU module
+            redirected_module: Redirected Module
+            parent: Parent which tracks the stage in progress and sets parent.redirected
+    """
     def __init__(self, old_module, redirected_module, parent):
         super().__init__()
         self.redirected_module = redirected_module
@@ -23,7 +31,7 @@ class TemporaryRelu(nn.Module):
 
 
 class RedirectReLUs(nn.Module):
-    """Callback that replaces all ReLU or ReLU6 modules in the model with
+    """Module that replaces all ReLU or ReLU6 modules in the model with
     `redirected ReLU <https://github.com/tensorflow/lucid/blob/master/lucid/misc/redirected_relu_grad.py>`__
     versions for the first 16 iterations. Note that this doesn't apply to nn.functional ReLUs.
 
