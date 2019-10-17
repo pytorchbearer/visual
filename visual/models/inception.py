@@ -5,7 +5,6 @@ import warnings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.jit.annotations import Optional
 from torch.hub import load_state_dict_from_url
 
 __all__ = ['Inception3', 'inception_v3', 'InceptionOutputs', '_InceptionOutputs']
@@ -17,7 +16,7 @@ model_urls = {
 }
 
 InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
-InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Optional[torch.Tensor]}
+InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': torch.Tensor}
 
 # Script annotations failed with _GoogleNetOutputs = namedtuple ...
 # _InceptionOutputs set here for backwards compat
