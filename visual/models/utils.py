@@ -14,10 +14,6 @@ class IntermediateLayerGetter(nn.Module):
     into the model in the same order as they are used.
     Arguments:
         model (nn.Module): model on which we will extract the features
-        return_layers (Dict[name, new_name]): a dict containing the names
-            of the modules for which the activations will be returned as
-            the key of the dict, and the value of the dict is the name
-            of the returned activation (which the user can specify).
     Examples::
         >>> import torchvision
         >>> m = torchvision.models.resnet18(pretrained=True)
@@ -29,12 +25,11 @@ class IntermediateLayerGetter(nn.Module):
         [('feat1', torch.Size([1, 64, 56, 56])), ('feat2', torch.Size([1, 256, 14, 14]))]
     """
 
-    def __init__(self, model, return_layers):
+    def __init__(self, model):
         super(IntermediateLayerGetter, self).__init__()
 
         self.model = model
         self.layer_names = []
-        self.return_layers = return_layers
         self.out = OrderedDict()
 
         self.recursive_layer_names(model, '')
@@ -50,8 +45,7 @@ class IntermediateLayerGetter(nn.Module):
                     return o
                 return new_forward_1
 
-            if nname in self.return_layers:
-                module.__setattr__('forward', new_forward(module.forward, self.return_layers[nname]))
+            module.__setattr__('forward', new_forward(module.forward, nname))
             self.layer_names.append(nname)
             if len(list(layer.named_children())) > 0:
                 self.recursive_layer_names(module, nname)
