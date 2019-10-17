@@ -1,9 +1,37 @@
 import torch
 import torchbearer
+from torch import nn
 
 
-class RedirectReLUs(torchbearer.Callback):
-    """Callback that replaces all ReLU or ReLU6 modules in the model with
+class TemporaryRelu(nn.Module):
+    """ Module to wrap ReLU and RedirectedReLU and call the correct on for the current stage of training.
+        For the first epoch only the first 16 batches use redirection and all others use standard relu.
+
+        Args:
+            old_module: Standard ReLU module
+            redirected_module: Redirected Module
+            parent: Parent which tracks the stage in progress and sets parent.redirected
+    """
+    def __init__(self, old_module, redirected_module, parent):
+        super().__init__()
+        self.redirected_module = redirected_module
+        self.old_module = old_module
+        self.parent = [parent]
+        self.module = old_module
+
+    def __repr__(self):
+        return self.module.__repr__()
+
+    def forward(self, x):
+        if self.parent[0].redirected:
+            self.module = self.redirected_module
+        else:
+            self.module = self.old_module
+        return self.module(x)
+
+
+class RedirectReLUs(nn.Module):
+    """Module that replaces all ReLU or ReLU6 modules in the model with
     `redirected ReLU <https://github.com/tensorflow/lucid/blob/master/lucid/misc/redirected_relu_grad.py>`__
     versions for the first 16 iterations. Note that this doesn't apply to nn.functional ReLUs.
 
@@ -12,43 +40,48 @@ class RedirectReLUs(torchbearer.Callback):
         >>> import torchbearer
         >>> from torchbearer import Trial
         >>> from visual import RedirectReLUs
-        >>> model = torch.nn.Sequential(torch.nn.ReLU())
+        >>> model = RedirectReLUs(torch.nn.Sequential(torch.nn.ReLU()))
         >>> @torchbearer.callbacks.on_sample
         ... def input_data(state):
         ...     state[torchbearer.X] = torch.rand(1, 1)
-        >>> trial = Trial(model, callbacks=[RedirectReLUs(), input_data]).for_steps(1).run()
+        >>> trial = Trial(model, callbacks=[input_data]).for_steps(1).run()
         >>> print(model)
-        Sequential(
-          (0): RedirectedReLU()
+        RedirectReLUs(
+          (model): Sequential(
+            (0): RedirectedReLU()
+          )
         )
-        >>> model = torch.nn.Sequential(torch.nn.ReLU())
-        >>> trial = Trial(model, callbacks=[RedirectReLUs(), input_data]).for_steps(17).run()
+        >>> model = RedirectReLUs(torch.nn.Sequential(torch.nn.ReLU()))
+        >>> trial = Trial(model, callbacks=[input_data]).for_steps(17).run()
         >>> print(model)
-        Sequential(
-          (0): ReLU()
+        RedirectReLUs(
+          (model): Sequential(
+            (0): ReLU()
+          )
         )
-
     """
-    def __init__(self):
+    def __init__(self, model):
         super(RedirectReLUs, self).__init__()
         self.relu_types = [torch.nn.ReLU]
         self.old_modules = {}
+        self.model = self.replace_relu(model)
+        self.batch = None
+        self.redirected = True
 
-    def on_start(self, state):
-        super(RedirectReLUs, self).on_start(state)
-        for i, m in enumerate(state[torchbearer.MODEL].children()):
+    def replace_relu(self, model):
+        for i, m in enumerate(model.children()):
             if type(m) == torch.nn.ReLU:
                 self.old_modules[i] = m
-                state[torchbearer.MODEL]._modules[str(i)] = RedirectedReLU()
+                model._modules[str(i)] = TemporaryRelu(m, RedirectedReLU(), self)
             elif type(m) == torch.nn.ReLU6:
                 self.old_modules[i] = m
-                state[torchbearer.MODEL]._modules[str(i)] = RedirectedReLU6()
+                model._modules[str(i)] = TemporaryRelu(m, RedirectedReLU6(), self)
+        return model
 
-    def on_sample(self, state):
-        if state[torchbearer.BATCH] == 16:
-            for i, m in enumerate(state[torchbearer.MODEL].children()):
-                if type(m) == RedirectedReLU:
-                    state[torchbearer.MODEL]._modules[str(i)] = self.old_modules[i]
+    def forward(self, x, state=None):
+        if state is not None:
+            self.redirected = not (state[torchbearer.EPOCH] != 0 or state[torchbearer.BATCH] >= 16)
+        return self.model(x)
 
 
 class RedirectedReLU(torch.nn.Module):
