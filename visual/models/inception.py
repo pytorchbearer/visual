@@ -160,12 +160,7 @@ class Inception3(nn.Module):
         # N x 2048
         x = self.fc(x)
         # N x 1000 (num_classes)
-        if torch.jit.is_scripting():
-            if not aux_defined:
-                warnings.warn("Scripted InceptionNet always returns InceptionOutputs Tuple")
-            return InceptionOutputs(x, aux)
-        else:
-            return self.eager_outputs(x, aux)
+        return self.eager_outputs(x, aux)
 
     def eager_outputs(self, x, aux):
         # type: (torch.Tensor, Optional[torch.Tensor]) -> InceptionOutputs
