@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import torch
 from torch import nn
-from torch.jit.annotations import Dict
 
 from visual import LAYER_DICT
 
