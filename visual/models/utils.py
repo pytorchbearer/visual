@@ -2,7 +2,6 @@ from collections import OrderedDict
 
 import torch
 from torch import nn
-from torch.jit.annotations import Dict
 
 from visual import LAYER_DICT
 
@@ -12,6 +11,10 @@ class IntermediateLayerGetter(nn.Module):
     Module wrapper that returns intermediate layers from a model
     It has a strong assumption that the modules have been registered
     into the model in the same order as they are used.
+
+    .. Note::
+        It is best if using other wrappers such as RedirectedReLUs to only wrap with IntermediateLayerGetter after all other wrappers
+
     Arguments:
         model (nn.Module): model on which we will extract the features
     Examples::
