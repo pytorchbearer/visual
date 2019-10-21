@@ -270,15 +270,16 @@ class CPPNImage(Image):
         self.loc = nn.Parameter(torch.stack((x, y), dim=0).unsqueeze(0), requires_grad=False)
 
         convs = []
-        ch = hidden_channels * activation(torch.zeros(1, 1, 1, 1)).size(1)
+        act_ch = hidden_channels * activation(torch.zeros(1, 1, 1, 1)).size(1)
         for i in range(layers):
-            c = nn.Conv2d(2 if i == 0 else ch, hidden_channels, 1)
-            c.weight.data.normal_(0, np.sqrt(1.0 / ch))
+            in_ch = 2 if i == 0 else act_ch
+            c = nn.Conv2d(in_ch, hidden_channels, 1)
+            c.weight.data.normal_(0, np.sqrt(1.0 / in_ch))
             convs.append(c)
             if normalise:
                 convs.append(nn.InstanceNorm2d(hidden_channels))
             convs.append(activation)
-        convs.append(nn.Conv2d(ch, self.channels, 1))
+        convs.append(nn.Conv2d(act_ch, self.channels, 1))
         self.convs = nn.Sequential(*convs)
 
     @property
