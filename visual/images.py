@@ -227,39 +227,39 @@ class CPPNImage(Image):
         shape (tuple[int]): Shape (channels, height, width) of the final image.
         hidden_channels (int): The number of channels in hidden layers.
         layers (int): The number of convolutional layers.
-        activation: The activation function to use (defaults to CPPNImage.composite_activation).
+        activation: The activation function to use (defaults to CPPNImage.Composite).
         normalise (bool): If True (default), add instance norm to each layer.
         correlate (bool): If True, correlate colour channels of the image when loaded.
         transform: Transforms to apply to the image.
     """
 
-    @staticmethod
-    def composite_activation(x):
+    class Composite(nn.Module):
         """Normalised concatenation of atan(x) and atan^2(x) defined in
         `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
         """
-        x = torch.atan(x)
-        return torch.cat((x / 0.67, x.pow(2) / 0.6), 1)
+        def forward(self, x):
+            x = torch.atan(x)
+            return torch.cat((x / 0.67, x.pow(2) / 0.6), 1)
 
-    @staticmethod
-    def composite_activation_unbiased(x):
+    class UnbiasedComposite(nn.Module):
         """Unbiased normalised concatenation of atan(x) and atan^2(x) defined in
         `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
         """
-        x = torch.atan(x)
-        return torch.cat((x / 0.67, (x.pow(2) - 0.45) / 0.396), 1)
+        def forward(self, x):
+            x = torch.atan(x)
+            return torch.cat((x / 0.67, (x.pow(2) - 0.45) / 0.396), 1)
 
-    @staticmethod
-    def relu_normalised(x):
+    class NormalisedReLU(nn.Module):
         """Normalised ReLU function defined in
         `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
         """
-        x = x.relu()
-        return (x - 0.4) / 0.58
+        def forward(self, x):
+            x = x.relu()
+            return (x - 0.4) / 0.58
 
     def __init__(self, shape, hidden_channels=24, layers=8, activation=None, normalise=True, correlate=True, transform=None):
         super(CPPNImage, self).__init__(transform=transform, correlate=correlate)
-        activation = CPPNImage.composite_activation if activation is None else activation
+        activation = CPPNImage.Composite() if activation is None else activation
         r = 3. ** 0.5
         (self.channels, self.height, self.width) = shape
 
