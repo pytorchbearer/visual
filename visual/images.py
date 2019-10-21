@@ -265,7 +265,7 @@ class CPPNImage(Image):
 
         x_coord_range = torch.linspace(-r, r, steps=self.width)
         y_coord_range = torch.linspace(-r, r, steps=self.height)
-        x, y = torch.meshgrid(x_coord_range, y_coord_range)
+        x, y = torch.meshgrid(y_coord_range, x_coord_range)
 
         self.loc = nn.Parameter(torch.stack((x, y), dim=0).unsqueeze(0), requires_grad=False)
 
