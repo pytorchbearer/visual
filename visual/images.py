@@ -278,7 +278,7 @@ class CPPNImage(Image):
             if normalise:
                 convs.append(nn.InstanceNorm2d(hidden_channels))
             convs.append(activation)
-        convs.append(nn.Conv2d(ch, self.size_out, 1))
+        convs.append(nn.Conv2d(ch, self.channels, 1))
         self.convs = nn.Sequential(*convs)
 
     @property
