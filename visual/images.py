@@ -1,13 +1,30 @@
 import math
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 
 import torchbearer
+from torchbearer import cite
 
 
 IMAGE = torchbearer.state_key('image')
 """ State key under which to hold the image being ascended on """
+
+
+_stanley2007compositional = """
+@article{stanley2007compositional,
+  title={Compositional pattern producing networks: A novel abstraction of development},
+  author={Stanley, Kenneth O},
+  journal={Genetic programming and evolvable machines},
+  volume={8},
+  number={2},
+  pages={131--162},
+  year={2007},
+  publisher={Springer}
+}
+"""
 
 
 def _correlate_color(image, correlation, max_norm):
@@ -197,3 +214,88 @@ class FFTImage(Image):
         image = torch.irfft(spectrum, 2)
         image = image[:ch, :h, :w] / 4.0
         return image
+
+
+@cite(_stanley2007compositional)
+class CPPNImage(Image):
+    """Implements a simple Compositional Pattern Producing Network (CPPN), based on the lucid tutorial
+    `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+    This is a convolutional network which is given a coordinate system and outputs an image. The size of the input grid
+    can then be changed to produce outputs at arbitrary resolutions.
+
+    Args:
+        shape (tuple[int]): Shape (channels, height, width) of the final image.
+        hidden_channels (int): The number of channels in hidden layers.
+        layers (int): The number of convolutional layers.
+        activation: The activation function to use.
+        normalise (bool): If True (default), add instance norm to each layer.
+        correlate (bool): If True, correlate colour channels of the image when loaded.
+        transform: Transforms to apply to the image.
+    """
+
+    @staticmethod
+    def composite_activation(x):
+        """Normalised concatenation of atan(x) and atan^2(x) defined in
+        `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+        """
+        x = torch.atan(x)
+        return torch.cat((x / 0.67, x.pow(2) / 0.6), 1)
+
+    @staticmethod
+    def composite_activation_unbiased(x):
+        """Unbiased normalised concatenation of atan(x) and atan^2(x) defined in
+        `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+        """
+        x = torch.atan(x)
+        return torch.cat((x / 0.67, (x.pow(2) - 0.45) / 0.396), 1)
+
+    @staticmethod
+    def relu_normalised(x):
+        """Normalised ReLU function defined in
+        `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+        """
+        x = x.relu()
+        return (x - 0.4) / 0.58
+
+    def __init__(self, shape, hidden_channels=24, layers=8, activation=composite_activation, normalise=True, correlate=True, transform=None):
+        super(CPPNImage, self).__init__(transform=transform, correlate=correlate)
+        r = 3. ** 0.5
+        (self.channels, self.height, self.width) = shape
+
+        x_coord_range = torch.linspace(-r, r, steps=self.width)
+        y_coord_range = torch.linspace(-r, r, steps=self.height)
+        x, y = torch.meshgrid(x_coord_range, y_coord_range)
+
+        self.loc = nn.Parameter(torch.stack((x, y), dim=0).unsqueeze(0), requires_grad=False)
+
+        convs = []
+        ch = hidden_channels * activation(torch.zeros(1, 1, 1, 1)).size(1)
+        for i in range(layers):
+            c = nn.Conv2d(2 if i == 0 else ch, hidden_channels, 1)
+            c.weight.data.normal_(0, np.sqrt(1.0 / ch))
+            convs.append(c)
+            if normalise:
+                convs.append(nn.InstanceNorm2d(hidden_channels))
+            convs.append(activation)
+        convs.append(nn.Conv2d(ch, self.size_out, 1))
+        self.convs = nn.Sequential(*convs)
+
+    @property
+    def image(self):
+        img = self.convs(self.loc).squeeze(0)
+        return img
+
+    def resize_as(self, height, width):
+        """Return a new version of this CPPNImage that outputs images at a different resolution. The underlying
+        convolutional network will be shared across both objects.
+
+        Args:
+            height (int): The height (pixels) of the new image.
+            width (int): The width (pixels) of the new image.
+
+        Returns:
+            A new CPPNImage with the given size.
+        """
+        res = CPPNImage((self.channels, height, width), self.correlate, self.transform)
+        res.convs = self.convs
+        return res
