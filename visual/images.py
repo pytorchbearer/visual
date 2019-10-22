@@ -275,11 +275,15 @@ class CPPNImage(Image):
             in_ch = 2 if i == 0 else act_ch
             c = nn.Conv2d(in_ch, hidden_channels, 1)
             c.weight.data.normal_(0, np.sqrt(1.0 / in_ch))
+            c.bias.data.zero_()
             convs.append(c)
             if normalise:
                 convs.append(nn.InstanceNorm2d(hidden_channels))
             convs.append(activation)
-        convs.append(nn.Conv2d(act_ch, self.channels, 1))
+        c = nn.Conv2d(act_ch, self.channels, 1)
+        c.weight.data.zero_()
+        c.bias.data.zero_()
+        convs.append(c)
         self.convs = nn.Sequential(*convs)
 
     @property
@@ -298,6 +302,6 @@ class CPPNImage(Image):
         Returns:
             A new CPPNImage with the given size.
         """
-        res = CPPNImage((self.channels, height, width), self.correlate, self.transform)
+        res = CPPNImage((self.channels, height, width), correlate=self.correlate, transform=self.transform)
         res.convs = self.convs
         return res
