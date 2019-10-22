@@ -68,13 +68,17 @@ def image(shape, transform=None, correlate=True, fft=True, sigmoid=True, sd=0.01
     return img
 
 
-class Image(nn.Module):
+class Image(nn.Module, torchbearer.callbacks.imaging.ImagingCallback):
     """ Base image class which wraps an image tensor with transforms and allow de/correlating colour channels
 
     Args:
         transform: Transforms to apply to the image
         correlate (bool): If True, correlate colour channels of the image when loaded.
     """
+
+    def on_batch(self, state):
+        return self.get_valid_image()
+
     def __init__(self, transform=None, correlate=True):
         super(Image, self).__init__()
 
@@ -92,6 +96,19 @@ class Image(nn.Module):
         self.correlate = correlate
         self.correction = (lambda x: _correlate_color(x, self.color_correlation_svd_sqrt,
                                                       self.max_norm_svd_sqrt)) if correlate else (lambda x: x)
+
+    def with_handler(self, handler, index=None):
+        img = self.get_valid_image()
+
+        if img.dim() == 3:
+            img = img.unsqueeze(0)
+        rng = range(img.size(0)) if index is None else index
+        state = {torchbearer.EPOCH: 0}  # Hack, should do this in a better way
+        try:
+            for i in rng:
+                handler(img[i], i, state)
+        except TypeError:
+            handler(img[rng], rng, state)
 
     @property
     def image(self):
