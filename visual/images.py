@@ -275,6 +275,24 @@ class CPPNImage(Image):
             x = x.relu()
             return (x - 0.4) / 0.58
 
+    class NormalisedLeakyReLU(nn.LeakyReLU):
+        """Normalised leaky ReLU function. See
+        `torch.nn.LeakyReLU <https://pytorch.org/docs/stable/nn.html#torch.nn.LeakyReLU>`_ for details.
+
+        Args:
+            negative_slope (float): Controls the angle of the negative slope.
+        """
+        def __init__(self, negative_slope=0.01):
+            super(CPPNImage.NormalisedLeakyReLU, self).__init__(negative_slope=negative_slope)
+            a = np.random.normal(0.0, 1.0, 10**4)
+            a = np.maximum(a, 0.0) + negative_slope * np.minimum(a, 0.0)
+            self.mean = a.mean()
+            self.std = a.std()
+
+        def forward(self, x):
+            x = super(CPPNImage.NormalisedLeakyReLU, self).forward(x)
+            return (x - self.mean) / self.std
+
     @staticmethod
     def _make_grid(height, width):
         r = 3. ** 0.5
