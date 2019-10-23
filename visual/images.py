@@ -1,13 +1,30 @@
 import math
 
+import numpy as np
+
 import torch
 import torch.nn as nn
 
 import torchbearer
+from torchbearer import cite
 
 
 IMAGE = torchbearer.state_key('image')
 """ State key under which to hold the image being ascended on """
+
+
+_stanley2007compositional = """
+@article{stanley2007compositional,
+  title={Compositional pattern producing networks: A novel abstraction of development},
+  author={Stanley, Kenneth O},
+  journal={Genetic programming and evolvable machines},
+  volume={8},
+  number={2},
+  pages={131--162},
+  year={2007},
+  publisher={Springer}
+}
+"""
 
 
 def _correlate_color(image, correlation, max_norm):
@@ -51,13 +68,17 @@ def image(shape, transform=None, correlate=True, fft=True, sigmoid=True, sd=0.01
     return img
 
 
-class Image(nn.Module):
+class Image(nn.Module, torchbearer.callbacks.imaging.ImagingCallback):
     """ Base image class which wraps an image tensor with transforms and allow de/correlating colour channels
 
     Args:
         transform: Transforms to apply to the image
         correlate (bool): If True, correlate colour channels of the image when loaded.
     """
+
+    def on_batch(self, state):
+        return self.get_valid_image()
+
     def __init__(self, transform=None, correlate=True):
         super(Image, self).__init__()
 
@@ -75,6 +96,20 @@ class Image(nn.Module):
         self.correlate = correlate
         self.correction = (lambda x: _correlate_color(x, self.color_correlation_svd_sqrt,
                                                       self.max_norm_svd_sqrt)) if correlate else (lambda x: x)
+
+    def with_handler(self, handler, index=None):
+        img = self.get_valid_image()
+
+        if img.dim() == 3:
+            img = img.unsqueeze(0)
+        rng = range(img.size(0)) if index is None else index
+        state = {torchbearer.EPOCH: 0}  # Hack, should do this in a better way
+        try:
+            for i in rng:
+                handler(img[i], i, state)
+        except TypeError:
+            handler(img[rng], rng, state)
+        return self
 
     @property
     def image(self):
@@ -197,3 +232,120 @@ class FFTImage(Image):
         image = torch.irfft(spectrum, 2)
         image = image[:ch, :h, :w] / 4.0
         return image
+
+
+@cite(_stanley2007compositional)
+class CPPNImage(Image):
+    """Implements a simple Compositional Pattern Producing Network (CPPN), based on the lucid tutorial
+    `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+    This is a convolutional network which is given a coordinate system and outputs an image. The size of the input grid
+    can then be changed to produce outputs at arbitrary resolutions.
+
+    Args:
+        shape (tuple[int]): Shape (channels, height, width) of the final image.
+        hidden_channels (int): The number of channels in hidden layers.
+        layers (int): The number of convolutional layers.
+        activation: The activation function to use (defaults to CPPNImage.Composite).
+        normalise (bool): If True (default), add instance norm to each layer.
+        correlate (bool): If True, correlate colour channels of the image when loaded.
+        transform: Transforms to apply to the image.
+    """
+
+    class Composite(nn.Module):
+        """Normalised concatenation of atan(x) and atan^2(x) defined in
+        `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+        """
+        def forward(self, x):
+            x = torch.atan(x)
+            return torch.cat((x / 0.67, x.pow(2) / 0.6), 1)
+
+    class UnbiasedComposite(nn.Module):
+        """Unbiased normalised concatenation of atan(x) and atan^2(x) defined in
+        `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+        """
+        def forward(self, x):
+            x = torch.atan(x)
+            return torch.cat((x / 0.67, (x.pow(2) - 0.45) / 0.396), 1)
+
+    class NormalisedReLU(nn.Module):
+        """Normalised ReLU function defined in
+        `xy2rgb <https://colab.research.google.com/github/tensorflow/lucid/blob/master/notebooks/differentiable-parameterizations/xy2rgb.ipynb>`_.
+        """
+        def forward(self, x):
+            x = x.relu()
+            return (x - 0.4) / 0.58
+
+    class NormalisedLeakyReLU(nn.LeakyReLU):
+        """Normalised leaky ReLU function. See
+        `torch.nn.LeakyReLU <https://pytorch.org/docs/stable/nn.html#torch.nn.LeakyReLU>`_ for details.
+
+        Args:
+            negative_slope (float): Controls the angle of the negative slope.
+        """
+        def __init__(self, negative_slope=0.01):
+            super(CPPNImage.NormalisedLeakyReLU, self).__init__(negative_slope=negative_slope)
+            a = np.random.normal(0.0, 1.0, 10**4)
+            a = np.maximum(a, 0.0) + negative_slope * np.minimum(a, 0.0)
+            self.mean = a.mean()
+            self.std = a.std()
+
+        def forward(self, x):
+            x = super(CPPNImage.NormalisedLeakyReLU, self).forward(x)
+            return (x - self.mean) / self.std
+
+    @staticmethod
+    def _make_grid(height, width):
+        r = 3. ** 0.5
+        x_coord_range = torch.linspace(-r, r, steps=width)
+        y_coord_range = torch.linspace(-r, r, steps=height)
+        x, y = torch.meshgrid(y_coord_range, x_coord_range)
+        return nn.Parameter(torch.stack((x, y), dim=0).unsqueeze(0), requires_grad=False)
+
+    def __init__(self, shape, hidden_channels=24, layers=8, activation=None, normalise=False, correlate=True, transform=None):
+        super(CPPNImage, self).__init__(transform=transform, correlate=correlate)
+        activation = CPPNImage.Composite() if activation is None else activation
+
+        (self.channels, self.height, self.width) = shape
+
+        self.loc = CPPNImage._make_grid(self.height, self.width)
+
+        convs = []
+        act_ch = hidden_channels * activation(torch.zeros(1, 1, 1, 1)).size(1)
+        for i in range(layers):
+            in_ch = 2 if i == 0 else act_ch
+            c = nn.Conv2d(in_ch, hidden_channels, 1)
+            c.weight.data.normal_(0, np.sqrt(1.0 / in_ch))
+            c.bias.data.zero_()
+            convs.append(c)
+            if normalise:
+                convs.append(nn.InstanceNorm2d(hidden_channels))
+            convs.append(activation)
+        c = nn.Conv2d(act_ch, self.channels, 1)
+        c.weight.data.zero_()
+        c.bias.data.zero_()
+        convs.append(c)
+        self.convs = nn.Sequential(*convs)
+
+    @property
+    def image(self):
+        img = self.convs(self.loc).squeeze(0)
+        return img
+
+    def resize(self, height, width):
+        """Return a new version of this CPPNImage that outputs images at a different resolution. The underlying
+        convolutional network will be shared across both objects.
+
+        Args:
+            height (int): The height (pixels) of the new image.
+            width (int): The width (pixels) of the new image.
+
+        Returns:
+            A new CPPNImage with the given size.
+        """
+        import copy
+        res = copy.copy(self)  # Shallow copy, just replace the loc tensor
+        res.height = height
+        res.width = width
+
+        res.loc = CPPNImage._make_grid(res.height, res.width)
+        return res.to(self.loc.device)
