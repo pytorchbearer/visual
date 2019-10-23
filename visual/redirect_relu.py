@@ -17,7 +17,7 @@ class TemporaryRelu(nn.Module):
         self.redirected_module = redirected_module
         self.old_module = old_module
         self.parent = [parent]
-        self.module = old_module
+        self.module = redirected_module
 
     def __repr__(self):
         return self.module.__repr__()
