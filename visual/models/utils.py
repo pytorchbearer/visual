@@ -54,6 +54,7 @@ class IntermediateLayerGetter(nn.Module):
                 self.recursive_layer_names(module, nname)
 
     def forward(self, x, state=None):
-        self.model(x)
+        out = self.model(x)
         if state is not None:
             state[LAYER_DICT] = self.out
+        return out
