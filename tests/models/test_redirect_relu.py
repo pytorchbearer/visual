@@ -39,13 +39,3 @@ class TestRedirectRelu(TestCase):
             ctx.saved_tensors = in_tens
             pred_grad = RedirectedReLU6Function.backward(ctx, in_grad)
             self.assertTrue(pred_grad.item() == grad.item())
-
-    def test_Wrap(self):
-        import visual
-        from torchvision.models import resnet18
-
-        model = resnet18(True)
-        model = visual.wrap(model)
-
-        import torch
-        model(torch.rand(10, 3, 64, 64))
