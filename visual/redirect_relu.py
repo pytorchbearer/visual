@@ -17,7 +17,7 @@ class TemporaryRelu(nn.Module):
         self.redirected_module = redirected_module
         self.old_module = old_module
         self.parent = [parent]
-        self.module = old_module
+        self.module = redirected_module
 
     def __repr__(self):
         return self.module.__repr__()
@@ -69,13 +69,19 @@ class RedirectReLUs(nn.Module):
         self.redirected = True
 
     def replace_relu(self, model):
-        for i, m in enumerate(model.children()):
+        new_modules = {}
+        for i, mod in enumerate(model.named_children()):
+            n, m = mod
             if type(m) == torch.nn.ReLU:
-                self.old_modules[i] = m
-                model._modules[str(i)] = TemporaryRelu(m, RedirectedReLU(), self)
+                self.old_modules[n] = m
+                new_modules[n] = TemporaryRelu(m, RedirectedReLU(), self)
             elif type(m) == torch.nn.ReLU6:
-                self.old_modules[i] = m
-                model._modules[str(i)] = TemporaryRelu(m, RedirectedReLU6(), self)
+                self.old_modules[n] = m
+                new_modules[n] = TemporaryRelu(m, RedirectedReLU6(), self)
+
+        for m in new_modules:
+            model._modules[m] = new_modules[m]
+
         return model
 
     def forward(self, x, state=None):
