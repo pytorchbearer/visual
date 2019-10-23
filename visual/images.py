@@ -109,6 +109,7 @@ class Image(nn.Module, torchbearer.callbacks.imaging.ImagingCallback):
                 handler(img[i], i, state)
         except TypeError:
             handler(img[rng], rng, state)
+        return self
 
     @property
     def image(self):
