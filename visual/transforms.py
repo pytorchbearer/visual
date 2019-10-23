@@ -1,5 +1,6 @@
 import random
 import math
+import warnings
 
 import torch
 import torch.nn.functional as F
@@ -66,12 +67,14 @@ class RandomScale(object):
         return _rand_select(scales, seed)
 
     def __call__(self, x):
-        return _as_3d(F.interpolate(
-            _as_4d(x),
-            scale_factor=self.get_params(self._scales, self._seed),
-            mode=self._mode,
-            align_corners=self._align_corners
-        ))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # Stop the annoying interpolate warning
+            return _as_3d(F.interpolate(
+                _as_4d(x),
+                scale_factor=self.get_params(self._scales, self._seed),
+                mode=self._mode,
+                align_corners=self._align_corners
+            ))
 
 
 class RandomRotate(object):
@@ -106,14 +109,17 @@ class RandomRotate(object):
         theta[0, 1, 1] = math.cos(angle)
         theta[0, 0, 1] = math.sin(angle)
         theta[0, 1, 0] = -math.sin(angle)
-        grid = F.affine_grid(theta, x.size())
 
-        return _as_3d(F.grid_sample(
-            x,
-            grid,
-            mode=self._mode,
-            padding_mode=self._padding_mode
-        ))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # Stop the annoying grid_sample warning
+            grid = F.affine_grid(theta, x.size())
+
+            return _as_3d(F.grid_sample(
+                x,
+                grid,
+                mode=self._mode,
+                padding_mode=self._padding_mode
+            ))
 
 
 class RandomAlpha(object):

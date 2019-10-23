@@ -33,7 +33,11 @@ class TemporaryRelu(nn.Module):
 class RedirectReLUs(nn.Module):
     """Module that replaces all ReLU or ReLU6 modules in the model with
     `redirected ReLU <https://github.com/tensorflow/lucid/blob/master/lucid/misc/redirected_relu_grad.py>`__
-    versions for the first 16 iterations. Note that this doesn't apply to nn.functional ReLUs.
+    versions for the first 16 iterations.
+
+    .. Note::
+        - This doesn't apply to nn.functional ReLUs
+        - This must be applied before an IntermediateLayerGetter module for both to correctly function
 
     Example::
 
