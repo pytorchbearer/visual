@@ -274,17 +274,21 @@ class CPPNImage(Image):
             x = x.relu()
             return (x - 0.4) / 0.58
 
-    def __init__(self, shape, hidden_channels=24, layers=8, activation=None, normalise=True, correlate=True, transform=None):
+    @staticmethod
+    def _make_grid(height, width):
+        r = 3. ** 0.5
+        x_coord_range = torch.linspace(-r, r, steps=width)
+        y_coord_range = torch.linspace(-r, r, steps=height)
+        x, y = torch.meshgrid(y_coord_range, x_coord_range)
+        return nn.Parameter(torch.stack((x, y), dim=0).unsqueeze(0), requires_grad=False)
+
+    def __init__(self, shape, hidden_channels=24, layers=8, activation=None, normalise=False, correlate=True, transform=None):
         super(CPPNImage, self).__init__(transform=transform, correlate=correlate)
         activation = CPPNImage.Composite() if activation is None else activation
-        r = 3. ** 0.5
+
         (self.channels, self.height, self.width) = shape
 
-        x_coord_range = torch.linspace(-r, r, steps=self.width)
-        y_coord_range = torch.linspace(-r, r, steps=self.height)
-        x, y = torch.meshgrid(y_coord_range, x_coord_range)
-
-        self.loc = nn.Parameter(torch.stack((x, y), dim=0).unsqueeze(0), requires_grad=False)
+        self.loc = CPPNImage._make_grid(self.height, self.width)
 
         convs = []
         act_ch = hidden_channels * activation(torch.zeros(1, 1, 1, 1)).size(1)
@@ -308,7 +312,7 @@ class CPPNImage(Image):
         img = self.convs(self.loc).squeeze(0)
         return img
 
-    def resize_as(self, height, width):
+    def resize(self, height, width):
         """Return a new version of this CPPNImage that outputs images at a different resolution. The underlying
         convolutional network will be shared across both objects.
 
@@ -319,6 +323,10 @@ class CPPNImage(Image):
         Returns:
             A new CPPNImage with the given size.
         """
-        res = CPPNImage((self.channels, height, width), correlate=self.correlate, transform=self.transform)
-        res.convs = self.convs
+        import copy
+        res = copy.copy(self)  # Shallow copy, just replace the loc tensor
+        res.height = height
+        res.width = width
+
+        res.loc = CPPNImage._make_grid(res.height, res.width)
         return res
