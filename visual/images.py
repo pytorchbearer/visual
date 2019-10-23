@@ -329,5 +329,5 @@ class CPPNImage(Image):
         res.width = width
 
         res.loc = CPPNImage._make_grid(res.height, res.width)
-        res.loc.to(self.loc.device)
+        res.loc = res.loc.to(self.loc.device)
         return res
