@@ -1,5 +1,8 @@
+import warnings
+
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 
 import torchbearer
@@ -20,7 +23,7 @@ class _Wrapper(nn.Module):
             return self.base_model(x)
 
 
-class BasicAscent(ImagingCallback):
+class Ascent(ImagingCallback):
     """Callback or stand-alone class to perform gradient ascent on an input image.
 
     Args:
@@ -32,7 +35,7 @@ class BasicAscent(ImagingCallback):
         steps (int): Number of gradient ascent steps to run
     """
     def __init__(self, image, criterion, transform=None, verbose=0, optimizer=None, steps=256):
-        super(BasicAscent, self).__init__(transform=transform)
+        super(Ascent, self).__init__(transform=transform)
         self.image = image
         self.criterion = criterion
         self.verbose = verbose
@@ -77,3 +80,49 @@ class BasicAscent(ImagingCallback):
         state.update({torchbearer.MODEL: model, torchbearer.DEVICE: device, torchbearer.DATA_TYPE: dtype})
         self.process(state)
         self.verbose = old_verbose
+
+
+class PyramidAscent(Ascent):
+    def __init__(self, image, criterion, transform=None, verbose=0, optimizer=None, steps=32, scales=10, scale_factor=1.4):
+        super(PyramidAscent, self).__init__(image, criterion, transform=transform, verbose=verbose, optimizer=optimizer,
+                                            steps=steps)
+        self.scales = scales
+        self.scale_factor = scale_factor
+
+        self.pyramid = nn.ParameterList(PyramidAscent._make_pyramid(self.image.get_valid_image(), self.scales, self.scale_factor)[::-1])
+
+    @staticmethod
+    def _make_pyramid(image, scales, scale_factor):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # Stop the annoying grid_sample warning
+            res = [nn.Parameter(image, requires_grad=False)]
+            for _ in range(scales - 1):
+                res.append(nn.Parameter(F.interpolate(res[-1].unsqueeze(0), scale_factor=1/scale_factor, mode='bilinear').squeeze(0), requires_grad=False))
+        return res
+
+    def on_batch(self, state):
+        for i in range(len(self.pyramid)):
+            new_scale = self.pyramid[i].data.to(state[torchbearer.DEVICE])
+            if i > 0:
+                image = self.image.get_valid_image().data
+                detail = image - self.pyramid[i - 1].data.to(image.device)  # Get detail
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")  # Stop the annoying grid_sample warning
+                    detail = F.interpolate(detail.unsqueeze(0), size=(new_scale.size(1), new_scale.size(2)), mode='bilinear').squeeze(0)  # Upsample
+                new_scale = new_scale.data + detail  # Add
+
+            self.image = self.image.load_tensor(new_scale)
+
+            # begin{hack}
+            old_param_set = set()
+            for group in self.optimizer.param_groups:
+                old_param_set.update(set(group['params']))
+
+            new_param_set = set()
+            new_param_set.update(self.image.parameters())
+
+            self.optimizer.add_param_group({'params': list(new_param_set.difference(old_param_set))})
+            # end{hack}
+
+            super(PyramidAscent, self).on_batch(state)
+        return self.image.get_valid_image()

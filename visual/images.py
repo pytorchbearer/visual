@@ -4,6 +4,7 @@ import numpy as np
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 import torchbearer
 from torchbearer import cite
@@ -36,11 +37,41 @@ def _correlate_color(image, correlation, max_norm):
     shape = image.shape
     image = image.view(3, -1).permute(1, 0)
     color_correlation_normalized = correlation / max_norm
-    image = image.matmul(color_correlation_normalized.t())
+    image = image.matmul(color_correlation_normalized.to(image.device).t())
     image = image.permute(1, 0).contiguous().view(shape)
     if alpha is not None:
         image = torch.cat((image, alpha), dim=0)
     return image
+
+
+def _inverse_correlate_color(image, correlation, max_norm):
+    if image.size(0) == 4:
+        alpha = image[-1].unsqueeze(0)
+        image = image[:-1]
+    else:
+        alpha = None
+    shape = image.shape
+    image = image.view(3, -1).permute(1, 0)
+    color_correlation_normalized = correlation / max_norm
+    image = image.matmul(color_correlation_normalized.to(image.device).t().inverse())
+    image = image.permute(1, 0).contiguous().view(shape)
+    if alpha is not None:
+        image = torch.cat((image, alpha), dim=0)
+    return image
+
+
+def _inverse_sigmoid(x, eps=1e-4):
+    x.clamp_(0.01, 0.99)
+    return ((x / ((1 - x) + eps)) + eps).log()
+
+
+def _inverse_clamp(x, color_mean, correlate):
+    if correlate:
+        if x.dim() > 3:
+            x[:3] = x[:3] - color_mean
+        else:
+            x = x - color_mean
+    return x
 
 
 def image(shape, transform=None, correlate=True, fft=True, sigmoid=True, sd=0.01, decay_power=1, requires_grad=True):
@@ -160,6 +191,36 @@ class Image(nn.Module, torchbearer.callbacks.imaging.ImagingCallback):
         else:
             return self.with_activation(clamp)
 
+    def load_file(self, file):
+        """Load this Image with the contents of the given file.
+
+        Args:
+            file (str): The image file to load
+        """
+        from PIL import Image
+        im = Image.open(file)
+        tensor = torch.from_numpy(np.array(im)).float().permute(2, 0, 1) / 255.
+        return self.load_tensor(tensor)
+
+    def load_tensor(self, tensor):
+        """Load this Image with the contents of the given tensor.
+
+        Args:
+            tensor: The tensor to load
+        """
+        if 'sigmoid' in self.activation.__name__:
+            tensor = _inverse_sigmoid(tensor)
+        elif 'clamp' in self.activation.__name__:
+            tensor = _inverse_clamp(tensor, self.color_mean, self.correlate)
+
+        if self.correlate:
+            tensor = _inverse_correlate_color(tensor, self.color_correlation_svd_sqrt, self.max_norm_svd_sqrt)
+
+        return self._load_inverse(tensor)
+
+    def _load_inverse(self, tensor):
+        raise NotImplementedError
+
 
 class TensorImage(Image):
     """ Wrapper for Image which takes a torch.Tensor.
@@ -183,6 +244,10 @@ class TensorImage(Image):
             `torch.Tensor`: Image (channels, height, width) in real space
         """
         return self.tensor
+
+    def _load_inverse(self, tensor):
+        self.tensor = nn.Parameter(tensor.to(self.tensor.device), requires_grad=self.tensor.requires_grad)
+        return self
 
 
 def fftfreq2d(w, h):
@@ -209,16 +274,21 @@ class FFTImage(Image):
     def __init__(self, shape, sd=0.01, decay_power=1, transform=None, correlate=True, requires_grad=True):
         super(FFTImage, self).__init__(transform=transform, correlate=correlate)
 
-        ch, h, w = shape
-        freqs = fftfreq2d(w, h)
-        scale = torch.ones(1) / torch.max(freqs, torch.tensor([1. / max(w, h)], dtype=torch.float32)).pow(decay_power)
-        self.scale = nn.Parameter(scale * math.sqrt(w * h), requires_grad=False)
+        self.decay_power = decay_power
 
-        param_size = [ch] + list(freqs.shape) + [2]
+        freqs = fftfreq2d(shape[2], shape[1])
+        self.scale = FFTImage._scale(shape, freqs, decay_power)
+
+        param_size = [shape[0]] + list(freqs.shape) + [2]
         param = torch.randn(param_size) * sd
         self.param = nn.Parameter(param, requires_grad=requires_grad)
 
         self._shape = shape
+
+    @staticmethod
+    def _scale(shape, freqs, decay_power):
+        scale = torch.ones(1) / torch.max(freqs, torch.tensor([1. / max(shape[2], shape[1])], dtype=torch.float32)).pow(decay_power)
+        return nn.Parameter(scale * math.sqrt(shape[2] * shape[1]), requires_grad=False)
 
     @property
     def image(self):
@@ -232,6 +302,17 @@ class FFTImage(Image):
         image = torch.irfft(spectrum, 2)
         image = image[:ch, :h, :w] / 4.0
         return image
+
+    def _load_inverse(self, tensor):
+        self._shape = list(tensor.shape)
+        self.scale = FFTImage._scale(self._shape, fftfreq2d(self._shape[2], self._shape[1]), self.decay_power)
+        self.scale.data = self.scale.data.to(self.param.device)
+        if self._shape[2] % 2 == 1:
+            tensor = torch.cat((tensor, torch.zeros(self._shape[:2] + [1], device=tensor.device)), dim=2)
+        tensor = torch.rfft(tensor.to(self.param.device), 2)
+        tensor = tensor * 4 / self.scale.unsqueeze(0).unsqueeze(3)
+        self.param = nn.Parameter(tensor.to(self.param.device).data, requires_grad=self.param.requires_grad)
+        return self
 
 
 @cite(_stanley2007compositional)
@@ -349,3 +430,6 @@ class CPPNImage(Image):
 
         res.loc = CPPNImage._make_grid(res.height, res.width)
         return res.to(self.loc.device)
+
+    def _load_inverse(self, tensor):
+        raise NotImplementedError

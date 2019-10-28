@@ -104,3 +104,6 @@ venv.bak/
 .mypy_cache/
 
 .idea
+
+docs/_static/notebooks/*.png
+docs/_static/notebooks/*.jpg
