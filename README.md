@@ -78,6 +78,33 @@ intended to re-implement state of the art practices in filter and feature visual
             </a>
         </td>
     </tr>
+    <tr>
+        <td rowspan="3" width="160">
+            <img src="https://raw.githubusercontent.com/pytorchbearer/visual/master/docs/_static/img/deep_dream.png" width="256">
+        </td>    
+        <td rowspan="3">
+            <b>Deep Dream:</b> A guide on performing deep dreams with visual, including pyramid ascent in Fourier space.
+        </td>
+        <td align="center" width="80">
+            <a href="https://nbviewer.jupyter.org/github/pytorchbearer/visual/blob/master/docs/_static/notebooks/deep_dream.ipynb">
+                <img src="http://www.pytorchbearer.org/assets/img/nbviewer_logo.svg" height="34">
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td align="center">
+            <a href="https://github.com/pytorchbearer/visual/blob/master/docs/_static/notebooks/deep_dream.ipynb">
+                <img src="http://www.pytorchbearer.org/assets/img/github_logo.png" height="32">
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td align="center">
+            <a href="https://colab.research.google.com/github/pytorchbearer/visual/blob/master/docs/_static/notebooks/deep_dream.ipynb">
+                <img src="http://www.pytorchbearer.org/assets/img/colab_logo.png" height="28">
+            </a>
+        </td>
+    </tr>
 </table>
 
 <a name="install"/>
