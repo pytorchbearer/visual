@@ -105,6 +105,30 @@ intended to re-implement state of the art practices in filter and feature visual
             </a>
         </td>
     </tr>
+    <tr>
+        <td rowspan="3" colspan="2">
+            <b>Custom Models:</b> How to use visual with your own model or one from torch.hub.
+        </td>
+        <td align="center" width="80">
+            <a href="https://nbviewer.jupyter.org/github/pytorchbearer/visual/blob/master/docs/_static/notebooks/custom_models.ipynb">
+                <img src="http://www.pytorchbearer.org/assets/img/nbviewer_logo.svg" height="34">
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td align="center">
+            <a href="https://github.com/pytorchbearer/visual/blob/master/docs/_static/notebooks/custom_models.ipynb">
+                <img src="http://www.pytorchbearer.org/assets/img/github_logo.png" height="32">
+            </a>
+        </td>
+    </tr>
+    <tr>
+        <td align="center">
+            <a href="https://colab.research.google.com/github/pytorchbearer/visual/blob/master/docs/_static/notebooks/custom_models.ipynb">
+                <img src="http://www.pytorchbearer.org/assets/img/colab_logo.png" height="28">
+            </a>
+        </td>
+    </tr>
 </table>
 
 <a name="install"/>
