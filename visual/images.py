@@ -53,7 +53,7 @@ def _inverse_correlate_color(image, correlation, max_norm):
     shape = image.shape
     image = image.view(3, -1).permute(1, 0)
     color_correlation_normalized = correlation / max_norm
-    image = image.matmul(color_correlation_normalized.to(image.device).t().inverse())
+    image = image.matmul(color_correlation_normalized.to('cpu').t().inverse().to(image.device))
     image = image.permute(1, 0).contiguous().view(shape)
     if alpha is not None:
         image = torch.cat((image, alpha), dim=0)
